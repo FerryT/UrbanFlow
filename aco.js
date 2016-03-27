@@ -37,7 +37,7 @@ function Ant(cell /*in*/, target /*in*/, trails /*in out*/, settings /*in*/)
 Ant.prototype.score = function score(index)
 {
 	var t = this.trails[index],
-		h = this.target.heuristic[index] || .5,
+		h = this.target.heuristic[index],
 		a = this.settings.trail_power,
 		b = this.settings.heuristic_power;
 	return Math.pow(t, a) * Math.pow(h, b);
@@ -213,6 +213,7 @@ ACO.prototype.reset = function reset()
 		throw new Error('Can not reset ACO while active.');
 	for (var i = this.grid.edges.length - 1; i >= 0; --i)
 		this.trails[i] = this.settings.trail_default;
+	this.best = { length: Infinity };
 	return this;
 }
 
@@ -240,8 +241,8 @@ ACO.prototype.go = function go()
 			// Reward
 			for (var i = self.paths.length - 1; i >= 0; --i)
 				for (var j = self.paths[i].length - 1; j >= 0; --j)
-					self.trails[self.paths[i][j].index] += s.trail_reward
-						* (self.paths[i].length / self.best.length);
+					self.trails[self.paths[i][j].index] = Math.min(self.trails[self.paths[i][j].index]
+						+ s.trail_reward * (self.paths[i].length / self.best.length), 1);
 
 			self.ants = [];
 			self.paths = [];

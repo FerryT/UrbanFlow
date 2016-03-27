@@ -17,6 +17,7 @@
 	<div style="position: absolute; top: 2em; left: 700px;">
 		<button id="btn-start">Start</button>
 		<button id="btn-stop">Stop</button>
+		<button id="btn-reset">Reset</button>
 	</div>
 	<svg id="field" width="800" height="800"></svg>
 	<script>
@@ -25,12 +26,12 @@
 			grid = Rasterize(function (){}, domain, resolution),
 			settings = {
 				trail_default:   Number.MIN_VALUE,
-				trail_minimum:   1e-3,
+				trail_minimum:   1e-1,
 				trail_power:     0.5,
 				trail_decay:     0.5,
 				trail_reward:    0.5,
 				heuristic_power: 0.5,
-				iteration_limit: 10000,
+				iteration_limit: 100000,
 				ant_count:       25,
 			},
 			aco = new ACO(grid, settings),
@@ -55,6 +56,45 @@
 		{
 			aco.halt();
 		});
+
+		d3.select('#btn-reset').on('click', function ()
+		{
+			if (aco.active)
+					aco.interrupt(function () { aco.reset(); })
+				else
+					aco.reset();
+		});
+
+		var origin;
+		d3.select('#field').call(d3.behavior.drag()
+			.on('dragstart', function ()
+			{
+				origin = d3.mouse(this);
+			})
+			.on('dragend', function ()
+			{
+				var dest = d3.mouse(this),
+					x1 = Math.min(origin[0], dest[0]),
+					y1 = Math.min(origin[1], dest[1]),
+					x2 = Math.max(origin[0], dest[0]),
+					y2 = Math.max(origin[1], dest[1]);
+
+				for (var i = grid.edges.length - 1; i >= 0; --i)
+				{
+					var cell = grid.edges[i].v;
+					if (cell.x >= x1 && cell.x <= x2 && cell.y >= y1 && cell.y <= y2)
+					{
+						cell.occupied = true;
+						heuristic[i] = 0;
+					}
+				}
+
+				if (aco.active)
+					aco.interrupt(function () { aco.best = { length: Infinity }; })
+				else
+					aco.reset();
+			}))
+		;
 	</script>
 </body>
 </html>

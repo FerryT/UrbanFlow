@@ -52,7 +52,13 @@ Field.prototype.draw = function draw()
 		.attr('y', function (d) { return d.y - sy / 2; })
 	;
 	trail
-		.style('fill', function (d) { return color(Math.min(values[index(d)], 1)); })
+		.style('fill', function (d)
+		{
+			var value = values[index(d)];
+			if (d.occupied)
+				return 'Aquamarine';
+			return color(Math.min(value, 1));
+		})
 	;
 	trail.exit().remove();
 
