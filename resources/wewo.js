@@ -68,6 +68,7 @@ WeWoBatch = function WeWoBatch(script, number, force)
 {
 	var batch = this;
 	this.workers = [];
+	this.size = 0;
 	this.onmessage = null;
 	this.queue = [];
 	(function create(number)
@@ -85,6 +86,7 @@ WeWoBatch = function WeWoBatch(script, number, force)
 			}
 			worker.index = batch.workers.length;
 			batch.workers.push(worker);
+			++batch.size;
 			create(worker.emulated && !force ? 0 : number - 1);
 		}
 		if (worker.emulated)

@@ -53,6 +53,8 @@ function ACO(grid, settings, heuristic)
 
 	var cores = navigator.hardwareConcurrency || 4;
 	this.colony = new WeWoBatch('resources/colony.js', cores);
+	this.budget = undefined;
+	this.canary = undefined;
 	this.active = false;
 	this.paths = []; // Path found since last run
 
@@ -119,10 +121,13 @@ function resetTrails(aco, target)
 
 ACO.prototype.changeSettings = function changeSettings(settings)
 {
+	if (settings.ant_count < aco.colony.size)
+		throw new Error('[ACO] settings failed: ant_count should be at least ' + this.colony.size);
 	for (var x in settings)
 		if (settings.hasOwnProperty(x))
 			this.settings[x] = settings[x];
 	sync(this, 'settings', this.settings);
+	this.budget = Math.ceil(aco.settings.ant_count / aco.colony.size);
 }
 
 ACO.prototype.changeHeuristic = function changeHeuristic(heuristic)
@@ -233,7 +238,9 @@ function updateSpot(spots, cell, weight)
 ACO.prototype.go = function go()
 {
 	if (!this.sources.length || !this.targets.length)
-		throw new Error('[ACO] unable to run: at least one source and target required.')
+		throw new Error('[ACO] unable to run: at least one source and target required.');
+	if (this.budget <= 0)
+		throw new Error('[ACO] unable to run: ant_count should be at least ' + this.colony.size);
 	if (this.active)
 		return this;
 
@@ -248,23 +255,22 @@ ACO.prototype.go = function go()
 			return;
 		if (type == 'path')
 		{
-			++Count;
 			aco.paths.push(value);
 			if (aco.paths.length >= aco.settings.ant_count)
 				aco.progress();
 		}
 	}
+
+	// Set up budget canary: prevents the queue from flooding
+	this.budget = Math.ceil(this.settings.ant_count / this.colony.size);
+	function syncBudget() { sync(aco, 'budget', aco.budget, true); }
+	this.canary = setInterval(syncBudget, 1000 / 120);
+	syncBudget();
+	
 	sync(this, 'start');
 	this.active = true;
 	return this;
 }
-
-var Count = 0;
-setInterval(function ()
-{
-	document.title = ''+Count+' a second';
-	Count = 0;
-}, 1000);
 
 ACO.prototype.progress = function progress()
 {
@@ -325,6 +331,7 @@ ACO.prototype.progress = function progress()
 ACO.prototype.halt = function halt()
 {
 	if (!this.active) return this;
+	clearInterval(this.canary);
 	sync(this, 'stop');
 	this.colony.onmessage = null;
 	this.paths = [];

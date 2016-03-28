@@ -19,7 +19,8 @@ var timestamp = 0,
 	antcount = 100,
 	speed = 1000 / 60,
 	interval = undefined,
-	burst = 1000;
+	burst = 1000,
+	budget = undefined; // Controls how many paths will be produced
 
 self.onmessage = function recvMessage(e)
 {
@@ -33,6 +34,7 @@ self.onmessage = function recvMessage(e)
 		case 'targets':    targets    = value; break;
 		case 'trails':     trails     = value; break;
 		case 'heuristics': heuristics = value; break;
+		case 'budget':     budget     = value; break;
 		case 'start':      Start();            break;
 		case 'stop':       Stop();             break;
 		default: return;
@@ -73,24 +75,32 @@ function Step()
 		{
 			Report(ants[i]);
 			Ant.call(ants[i]);
+			if (--budget <= 0)
+			{
+				// Gradually increase burst after underrunning
+				burst = 1000;
+				return true;
+			}
 		}
 	}
 }
 
 function Run()
 {
-	if (!sources.length || !targets.length
+	if (budget <= 0
+	|| !sources.length || !targets.length
 	|| targets.length != heuristics.length
 	|| targets.length != trails.length)
 		return;
 	
 	var start = performance.now();
 	for (var i = burst - 1; i >= 0; --i)
-		Step();
+		if (Step())
+			return;
 	var stop = performance.now();
 
 	if (stop - start > speed)
-		burst -= 100;
+		burst = Math.max(burst - 100, 100);
 	else
 		burst += 100;
 }
