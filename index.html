@@ -3,6 +3,11 @@
 	<title>Urban flow</title>
 	<meta charset="utf-8">
 	<script src="resources/d3.min.js" charset="utf-8"></script>
+	<script src="resources/jquery-1.12.2.min.js"></script>
+	<script src="resources/ui/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="resources/ui/jquery-ui.min.css">
+	<link rel="stylesheet" href="resources/ui/jquery-ui.structure.min.css">
+	<link rel="stylesheet" href="resources/ui/jquery-ui.theme.min.css">
 	<script src="resources/wewo.js"></script>
 
 	<script src="resources/rasterizer.js"></script>
@@ -15,15 +20,40 @@
 	<link rel="stylesheet" href="resources/visuals.css">
 </head>
 <body>
-	<h1>Urban flow</h1>
-	<div style="position: absolute; top: 2em; left: 700px;">
-		<button id="btn-start">Start</button>
-		<button id="btn-stop">Stop</button>
-		<button id="btn-reset">Reset</button>
-	</div>
-	<svg id="field" width="800" height="800"></svg>
+	<header>
+		<h1></h1>
+	</header>
+	<section id="properties">
+		<div id="proptabs">
+			<h3>General</h3>
+			<div>
+				<h4>Simulation:</h4>
+				<div id="btns-state">
+					<input type="radio" id="rad-start" name="state" value="start"><label for="rad-start">Go</label>
+					<input type="radio" id="rad-stop" name="state" value="stop"><label for="rad-stop">Halt</label>
+				</div>
+			</div>
+			<h3>Algorithm</h3>
+			<div>&nbsp;</div>
+		</div>
+	</section>
+	<section id="content">
+		<div id="document">
+			<svg id="field" width="600" height="600"></svg>
+		</div>
+	</section>
+	<section id="toolbar">
+		<div id="btns-tools" class="ui-widget-header ui-corner-all">
+			<input type="radio" id="rad-road" name="tool" value="road"><label for="rad-road">Roads</label>
+			<input type="radio" id="rad-pavement" name="tool" value="pavement"><label for="rad-pavement">Pavements</label>
+			<input type="radio" id="rad-building" name="tool" value="building"><label for="rad-building">Buildings</label>
+		</div>
+	</section>
+	<footer>
+		<small>By Ferry Timmers and Maurice Houben, March 2016</small>
+	</footer>
 	<script>
-		var domain = [0, 0, 800, 800],
+		var domain = [0, 0, 600, 600],
 			resolution = [100, 100],
 			grid = Rasterize(function (){}, domain, resolution),
 			settings = {
@@ -40,7 +70,7 @@
 			field = new Field('field', aco, domain, resolution);
 		aco
 			.addSource(grid.lookup(0, 0), 100)
-			.addTarget(grid.lookup(800, 800), 100)
+			.addTarget(grid.lookup(Infinity, Infinity), 100)
 		;
 		window.requestAnimationFrame(function render()
 		{
@@ -48,51 +78,13 @@
 			window.requestAnimationFrame(render);
 		});
 
-		d3.select('#btn-start').on('click', function ()
+		$('#btns-state input').change(function ()
 		{
-			aco.go();
+			if (this.value == 'start')
+				aco.go();
+			else if (this.value == 'stop')
+				aco.halt();
 		});
-
-		d3.select('#btn-stop').on('click', function ()
-		{
-			aco.halt();
-		});
-
-		d3.select('#btn-reset').on('click', function ()
-		{
-			aco.reset();
-		});
-
-		var origin;
-		d3.select('#field').call(d3.behavior.drag()
-			.on('dragstart', function ()
-			{
-				origin = d3.mouse(this);
-			})
-			.on('dragend', function ()
-			{
-				var dest = d3.mouse(this),
-					x1 = Math.min(origin[0], dest[0]),
-					y1 = Math.min(origin[1], dest[1]),
-					x2 = Math.max(origin[0], dest[0]),
-					y2 = Math.max(origin[1], dest[1]);
-
-				for (var i = grid.edges.length - 1; i >= 0; --i)
-				{
-					var cell = grid.edges[i].v;
-					if (cell.x >= x1 && cell.x <= x2 && cell.y >= y1 && cell.y <= y2)
-					{
-						cell.occupied = true;
-						heuristic[i] = 0;
-					}
-				}
-
-				if (aco.active)
-					aco.interrupt(function () { aco.best = { length: Infinity }; })
-				else
-					aco.reset();
-			}))
-		;
 	</script>
 </body>
 </html>
