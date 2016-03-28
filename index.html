@@ -1,16 +1,18 @@
 <html>
 <head>
 	<title>Urban flow</title>
-	<script src="d3.min.js" charset="utf-8"></script>
+	<meta charset="utf-8">
+	<script src="resources/d3.min.js" charset="utf-8"></script>
+	<script src="resources/wewo.js"></script>
 
-	<script src="rasterizer.js"></script>
-	<script src="aco.js"></script>
-	<script src="heuristics.js"></script>
+	<script src="resources/rasterizer.js"></script>
+	<script src="resources/heuristics.js"></script>
+	<script src="resources/aco.js"></script>
 
-	<script src="interface.js"></script>
-	<link rel="stylesheet" href="interface.css">
-	<script src="visuals.js"></script>
-	<link rel="stylesheet" href="visuals.css">
+	<script src="resources/interface.js"></script>
+	<link rel="stylesheet" href="resources/interface.css">
+	<script src="resources/visuals.js"></script>
+	<link rel="stylesheet" href="resources/visuals.css">
 </head>
 <body>
 	<h1>Urban flow</h1>
@@ -34,12 +36,11 @@
 				iteration_limit: 100000,
 				ant_count:       25,
 			},
-			aco = new ACO(grid, settings),
-			field = new Field('field', aco, domain, resolution),
-			heuristic = Heuristic.cosine_distance(grid.edges, grid.lookup(800, 800));
+			aco = new ACO(grid, settings, Heuristic.cosine_distance),
+			field = new Field('field', aco, domain, resolution);
 		aco
 			.addSource(grid.lookup(0, 0), 100)
-			.addTarget(grid.lookup(800, 800), 100, heuristic)
+			.addTarget(grid.lookup(800, 800), 100)
 		;
 		window.requestAnimationFrame(function render()
 		{
@@ -59,10 +60,7 @@
 
 		d3.select('#btn-reset').on('click', function ()
 		{
-			if (aco.active)
-					aco.interrupt(function () { aco.reset(); })
-				else
-					aco.reset();
+			aco.reset();
 		});
 
 		var origin;

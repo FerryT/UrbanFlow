@@ -12,6 +12,7 @@ function Cell(x, y, value)
 	this.y = y;
 	this.value = value;
 	this.edges = [];
+	this.index = -1; // cell index used by ACO
 }
 
 function Edge(u,v)
@@ -20,8 +21,6 @@ function Edge(u,v)
 	this.v = v; // destination cell
 	this.u.edges.push(this);
 	//this.v.edges.push(this); // ignore incomming edges
-
-	// reserve members
 	this.index = -1; // edge index used by ACO
 }
 
@@ -34,7 +33,10 @@ function Grid()
 Grid.prototype.add = function add(obj)
 {
 	if (obj.constructor == Cell)
+	{
+		obj.index = this.cells.length;
 		this.cells.push(obj);
+	}
 	else if (obj.constructor == Edge)
 	{
 		obj.index = this.edges.length;
@@ -50,6 +52,23 @@ Grid.prototype.eachCell = function forEachCell(func, obj)
 Grid.prototype.eachEdge = function forEachEdge(func, obj)
 {
 	return this.edges.forEach(func, obj);
+}
+
+Grid.prototype.toArray = function toArray()
+{
+	return {
+		cells: this.cells.map(function (cell)
+		{
+			return cell.edges.map(function (edge)
+			{
+				return edge.index;
+			});
+		}),
+		edges: this.edges.map(function (edge)
+		{
+			return edge.v.index;
+		}),
+	};
 }
 
 //------------------------------------------------------------------------------

@@ -37,7 +37,7 @@ Field.prototype.draw = function draw()
 	this.grid.eachEdge(function (edge)
 	{
 		var i = index(edge.v);
-		values[i] = Math.max(values[i] || 0, self.colony.trails[edge.index]);
+		values[i] = Math.max(values[i] || 0, self.colony.globalTrails[edge.index]);
 	});
 
 	var trail = this.trail.selectAll('rect').data(this.grid.cells),
@@ -62,7 +62,7 @@ Field.prototype.draw = function draw()
 	;
 	trail.exit().remove();
 
-	if (this.colony.best.length == Infinity) return this;
+	if (!this.colony.best || this.colony.best.length == Infinity) return this;
 	var line = d3.svg.line()
 			.x(function (d) { return d.v.x; })
 			.y(function (d) { return d.v.y; })

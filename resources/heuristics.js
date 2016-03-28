@@ -6,25 +6,36 @@
 
 //------------------------------------------------------------------------------
 
-function Heuristic(func, edges)
+function Heuristic(func, edges, normalize)
 {
 	var heuristic = edges.map(function (edge)
 	{
 		return func(edge);
 	});
 
-	// Normalize
-	var min = Infinity, max = -Infinity;
-	for (var i = heuristic.length - 1; i >= 0; --i)
+	if (normalize)
 	{
-		min = Math.min(min, heuristic[i]);
-		max = Math.max(max, heuristic[i]);
+		var min = Infinity, max = -Infinity;
+		for (var i = heuristic.length - 1; i >= 0; --i)
+		{
+			min = Math.min(min, heuristic[i]);
+			max = Math.max(max, heuristic[i]);
+		}
+		var span = max - min;
+		for (var i = heuristic.length - 1; i >= 0; --i)
+			heuristic[i] = Math.max(
+				(heuristic[i] - min) / span,
+				Number.MIN_VALUE) || 0;
 	}
-	var span = max - min;
-	for (var i = heuristic.length - 1; i >= 0; --i)
-		heuristic[i] = Math.max((heuristic[i] - min) / span, Number.MIN_VALUE) || 0;
 
 	return heuristic;
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+function none(edges, target)
+{
+	return Heuristic(function (edge) { return 1; }, edges);
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -38,7 +49,7 @@ function simple_distance(edges, target)
 			vx = target.x - x,
 			vy = target.y - y;
 		return -Math.sqrt(vx * vx + vy * vy);
-	}, edges);
+	}, edges, true);
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -55,12 +66,13 @@ function cosine_distance(edges, target)
 			return 1;
 		return (v1x*v2x + v1y*v2y) /
 			(Math.sqrt(v1x*v1x + v1y*v1y) * Math.sqrt(v2x*v2x + v2y*v2y));
-	}, edges);
+	}, edges, true);
 }
 
 //------------------------------------------------------------------------------
 
 global.Heuristic = Heuristic;
+global.Heuristic.none = none;
 global.Heuristic.simple_distance = simple_distance;
 global.Heuristic.cosine_distance = cosine_distance;
 
