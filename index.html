@@ -22,19 +22,47 @@
 <body>
 	<header>
 		<h1></h1>
+		<div id="btns-state">
+			<input type="radio" id="rad-start" name="state" value="start"><label for="rad-start">&#9655;</label>
+			<input type="radio" id="rad-stop" name="state" value="stop" checked="checked"><label for="rad-stop">&#9707;</label>
+		</div>
 	</header>
 	<section id="properties">
 		<div id="proptabs">
 			<h3>General</h3>
 			<div>
 				<h4>Simulation:</h4>
-				<div id="btns-state">
-					<input type="radio" id="rad-start" name="state" value="start"><label for="rad-start">Go</label>
-					<input type="radio" id="rad-stop" name="state" value="stop"><label for="rad-stop">Halt</label>
-				</div>
 			</div>
 			<h3>Algorithm</h3>
-			<div>&nbsp;</div>
+			<div>
+				<h4>Algorithm settings:</h4>
+				<div id="algstate">
+					<p>
+						<label for="slr-ant-count">Number of ants:</label> <span id="ant-count-value"></span>
+						<div id="slr-ant-count"></div>
+					</p>
+					<p>
+						<label for="slr-heuristic-power">Power of heuristics (&alpha;):</label> <span id="heuristic-power-value"></span>
+						<div id="slr-heuristic-power"></div>
+					</p>
+					<p>
+						<label for="slr-trail-power">Power of trails (&beta;):</label> <span id="trail-power-value"></span>
+						<div id="slr-trail-power"></div>
+					</p>
+					<p>
+						<label for="slr-trail-decay">Decay (&rho;):</label> <span id="trail-decay-value"></span>
+						<div id="slr-trail-decay"></div>
+					</p>
+					<p>
+						<label for="slr-trail-reward">Reward (L):</label> <span id="trail-reward-value"></span>
+						<div id="slr-trail-reward"></div>
+					</p>
+					<p>
+						<label for="slr-trail-feedback">Feedback (&lambda;):</label> <span id="trail-feedback-value"></span>
+						<div id="slr-trail-feedback"></div>
+					</p>
+				</div>
+			</div>
 		</div>
 	</section>
 	<section id="content">
@@ -78,13 +106,6 @@
 			window.requestAnimationFrame(render);
 		});
 
-		$('#btns-state input').change(function ()
-		{
-			if (this.value == 'start')
-				aco.go();
-			else if (this.value == 'stop')
-				aco.halt();
-		});
 	</script>
 </body>
 </html>
