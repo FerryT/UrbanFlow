@@ -1,5 +1,23 @@
-path {
-	stroke-width: 2;
+#heatmap {
+	image-rendering: optimizeSpeed;
+	image-rendering: -moz-crisp-edges;
+	image-rendering: -webkit-optimize-contrast;
+	image-rendering: -o-crisp-edges;
+	image-rendering: pixelated;
+	-ms-interpolation-mode: nearest-neighbor;
+}
+
+#editor {
+	cursor: default;
+}
+#sources circle, #targets circle {
 	stroke: black;
-	fill: none;
+	stroke-width: 2px;
+	cursor: pointer;
+}
+#sources circle {
+	fill: deepskyblue;
+}
+#targets circle {
+	fill: springgreen;
 }

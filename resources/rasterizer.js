@@ -147,6 +147,8 @@ function Rasterize(func, domain, resolution, type)
 		return this;
 	}
 	grid.lookup = lookup;
+	grid.domain = domain;
+	grid.resolution = resolution;
 
 	return grid.rasterize();
 }

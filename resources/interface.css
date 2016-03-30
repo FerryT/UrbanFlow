@@ -25,7 +25,7 @@ footer {
 	bottom: 0;
 	height: calc(1.5em);
 }
-header h1 {
+h1 {
 	text-shadow: 2px 1px #555555, 5px 2px black;
 }
 footer small {
@@ -34,6 +34,20 @@ footer small {
 	font-size: .7em;
 	color: #555555;
 	text-shadow: 1px 1px #1f1f1f;
+}
+#loader {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #202020;
+	z-index: 100;
+}
+#loader h1 {
+	position: relative;
+	top: 50%;
+	text-align: center;
 }
 
 section {
@@ -81,24 +95,65 @@ section {
 	border-top: 2px solid #404040;
 	border-bottom: 2px solid #171717;
 }
+#btns-tools label {
+	margin: .5em;
+	margin-right: 0;
+	width: 2.5em;
+	text-align: center;
+}
+#btns-tools span {
+	padding: .5em 0;
+}
+#btns-state {
+	position: absolute;
+	left: 1em;
+	top: 1em;
+}
+
 #document {
 	display: inline-block;
+	position: relative;
 	margin: 2em;
 	padding: 0;
 	background-color: white;
 	border: 1px solid black;
 	box-shadow: 4px 4px black;
 }
-#btns-tools label {
-	margin: .5em;
-	margin-right: 0;
+#document > * {
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 0;
+}
+#document :first-child {
+	position: relative;
 }
 
-#btns-state {
-	position: absolute;
-	left: 1em;
-	top: 1em;
+#warning {
+	display: none;
+	position: relative;
+	left: -2.2em;
+	width: 20.8em;
+	margin-bottom: .5em;
+	font-size: .75em;
 }
+#warning div {
+	padding: 0 .75em;
+}
+#warning div span
+{
+	float: left;
+	margin-right: .3em;
+}
+#status {
+	font-size: .75em;
+}
+.coord {
+	width: 2.5em;
+	text-align: right;
+}
+
 #algstate p {
 	margin: 1em 0 .5em 0;
 }
@@ -106,4 +161,18 @@ section {
 	position: absolute;
 	right: 2em;
 	color: #555555;
+}
+
+.remove {
+	float: right;
+	padding: .25em;
+}
+#pan-sources button, #pan-targets button {
+	width: inherit;
+}
+#pan-sources p, #pan-targets p {
+	margin: 1em 0 .5em 0;
+}
+#pan-sources .ui-slider, #pan-targets .ui-slider {
+	margin-top: .25em;
 }

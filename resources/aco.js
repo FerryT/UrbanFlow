@@ -57,6 +57,7 @@ function ACO(grid, settings, heuristic)
 	this.canary = undefined;
 	this.active = false;
 	this.paths = []; // Path found since last run
+	this.mark = null;
 
 	sync(this, 'grid', this.grid.toArray());
 	sync(this, 'settings', this.settings, true);
@@ -119,6 +120,17 @@ function resetTrails(aco, target)
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
+ACO.prototype.changeGrid = function changeGrid(grid)
+{
+	this.halt();
+	this.grid = grid;
+	this.sources.length = 0;
+	this.targets.length = 0;
+	sync(this, 'grid', this.grid.toArray());
+	this.changeHeuristic();
+	this.reset();
+}
+
 ACO.prototype.changeSettings = function changeSettings(settings)
 {
 	if (settings.ant_count < aco.colony.size)
@@ -139,6 +151,18 @@ ACO.prototype.changeHeuristic = function changeHeuristic(heuristic)
 	syncHeuristics(this);
 }
 
+ACO.prototype.benchmark = function benchmark()
+{
+	var mark = [0, 1];
+	if (this.mark)
+	{
+		this.mark[1] = (+new Date) - this.mark[1];
+		mark = this.mark;
+	}
+	this.mark = [0, +new Date];
+	return mark;
+}
+
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 ACO.prototype.addSource = function addSource(cell, weight)
@@ -148,17 +172,17 @@ ACO.prototype.addSource = function addSource(cell, weight)
 	return this;
 }
 
-ACO.prototype.removeSource = function removeSource(cell)
+ACO.prototype.removeSource = function removeSource(id)
 {
-	removeSpot(this.sources, cell);
+	removeSpot(this.sources, id);
 	syncSources(this);
 	this.paths = [];
 	return this;
 }
 
-ACO.prototype.updateSource = function updateSource(cell, weight)
+ACO.prototype.updateSource = function updateSource(id, cell, weight)
 {
-	updateSpot(this.sources, cell, weight);
+	updateSpot(this.sources, id, cell, weight);
 	syncSources(this);
 	return this;
 }
@@ -175,9 +199,9 @@ ACO.prototype.addTarget = function addTarget(cell, weight)
 	return this;
 }
 
-ACO.prototype.removeTarget = function removeTarget(cell)
+ACO.prototype.removeTarget = function removeTarget(id)
 {
-	removeSpot(this.targets, cell);
+	removeSpot(this.targets, id);
 	syncTargets(this);
 	syncHeuristics(this, true);
 	syncTrails(this, true);
@@ -185,10 +209,16 @@ ACO.prototype.removeTarget = function removeTarget(cell)
 	return this;
 }
 
-ACO.prototype.updateTarget = function updateTarget(cell, weight)
+ACO.prototype.updateTarget = function updateTarget(id, cell, weight)
 {
-	updateSpot(this.targets, cell, weight);
+	var stale = updateSpot(this.targets, id, cell, weight);
 	syncTargets(this);
+	if (stale)
+	{
+		updateHeuristic(aco, this.targets[id]);
+		syncHeuristics(this, true);
+		this.paths = [];
+	}
 	return this;
 }
 
@@ -203,34 +233,41 @@ function normalizeWeights(spot)
 
 function addSpot(spots, spot)
 {
+	spot.index = spots.length;
 	spots.push(spot);
 	normalizeWeights(spots);
 }
 
-function removeSpot(spots, cell)
+function removeSpot(spots, id)
 {
-	for (var i = spots.length - 1; i >= 0; --i)
-	{
-		if (spots[i].cell == cell)
-		{
-			spots.splice(i, 1);
-			normalizeWeights(spots);
-			return;
-		}
-	}
+	if (!(id in spots))
+		return;
+	spots.splice(id, 1);
+	for (var i = spots.length - 1; i >= id; --i)
+		spots[i].index = i;
+	normalizeWeights(spots);
 }
 
-function updateSpot(spots, cell, weight)
+function updateSpot(spots, id, cell, weight)
 {
-	for (var i = spots.length - 1; i >= 0; --i)
+	if (!(id in spots))
+		return false;
+	if (typeof cell === 'number')
 	{
-		if (spots[i].cell == cell)
-		{
-			spots[i].weight = weight;
-			normalizeWeights(spots);
-			return;
-		}
+		weight = cell;
+		cell = undefined;
 	}
+	if (weight !== undefined)
+	{
+		spots[id].weight = weight;
+		normalizeWeights(spots);
+	}
+	if (cell !== undefined)
+	{
+		spots[id].cell = cell;
+		return true;
+	}
+	return;
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -255,6 +292,8 @@ ACO.prototype.go = function go()
 			return;
 		if (type == 'path')
 		{
+			if (aco.mark)
+				++aco.mark[0];
 			aco.paths.push(value);
 			if (aco.paths.length >= aco.settings.ant_count)
 				aco.progress();
@@ -309,7 +348,7 @@ ACO.prototype.progress = function progress()
 
 		// Append to global trails
 		for (var j = target.trails.length - 1; j >= 0; --j)
-			this.globalTrails[j] = target.trails[j] * target.w;
+			this.globalTrails[j] += target.trails[j] * target.w;
 	}
 
 	// Global trail feedback
@@ -341,29 +380,33 @@ ACO.prototype.halt = function halt()
 
 ACO.prototype.interrupt = function interrupt(func)
 {
-	this.halt();
-	var aco = this;
-	setTimeout(function ()
+	if (this.active)
 	{
+		this.halt();
+		var aco = this;
+		setTimeout(function ()
+		{
+			func();
+			aco.go();
+		}, 40);
+	}
+	else
 		func();
-		aco.go();
-	}, 40);
 	return this;
 }
 
 ACO.prototype.reset = function reset()
 {
 	var aco = this;
-	function resetAllTrails()
+	this.interrupt(function resetAllTrails()
 	{
 		for (var i = aco.targets.length - 1; i >= 0; --i)
 			resetTrails(aco, aco.targets[i]);
+		aco.globalTrails.length = aco.grid.edges.length;
+		for (var i = aco.grid.edges.length - 1; i >= 0; --i)
+			aco.globalTrails[i] = aco.settings.trail_default;
 		syncTrails(aco);
-	}
-	if (this.active)
-		this.interrupt(resetAllTrails);
-	else
-		resetAllTrails();
+	});
 	return this;
 }
 

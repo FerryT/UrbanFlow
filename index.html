@@ -16,7 +16,8 @@
 
 	<script src="resources/interface.js"></script>
 	<link rel="stylesheet" href="resources/interface.css">
-	<script src="resources/visuals.js"></script>
+	<script src="resources/heatmap.js"></script>
+	<script src="resources/editor.js"></script>
 	<link rel="stylesheet" href="resources/visuals.css">
 </head>
 <body>
@@ -31,7 +32,28 @@
 		<div id="proptabs">
 			<h3>General</h3>
 			<div>
-				<h4>Simulation:</h4>
+				<div id="warning" class="ui-widget">
+					<div class="ui-state-error ui-corner-all">
+					<p>
+						<span class="ui-icon ui-icon-alert"></span>
+						<strong>Warning:</strong> Web workers fell back to emulated mode.
+					</p>
+					</div>
+				</div>
+				<div id="status"></div>
+				<h4>Document settings:</h4>
+				<p>
+					<label>Size: </label><br>
+					<input type="text" id="spn-width" class="coord"> X <input type="text" id="spn-height" class="coord">
+				</p>
+				<p>
+					<label>Resolution: </label><br>
+					<input type="text" id="spn-xres" class="coord"> X <input type="text" id="spn-yres" class="coord">
+				</p>
+				<p>
+					<button id="btn-create">Create</button><br>
+					<small>Note: changes will be lost.</small>
+				</p>
 			</div>
 			<h3>Algorithm</h3>
 			<div>
@@ -62,24 +84,40 @@
 						<div id="slr-trail-feedback"></div>
 					</p>
 				</div>
+				<button id="btn-reset">Reset</button>
 			</div>
+		<h3>Sources</h3>
+		<div id="pan-sources"></div>
+		<h3>Targets</h3>
+		<div id="pan-targets"></div>
 		</div>
 	</section>
 	<section id="content">
 		<div id="document">
-			<svg id="field" width="600" height="600"></svg>
+			<canvas id="heatmap"></canvas>
+			<svg id="editor"></svg>
 		</div>
 	</section>
 	<section id="toolbar">
 		<div id="btns-tools" class="ui-widget-header ui-corner-all">
-			<input type="radio" id="rad-road" name="tool" value="road"><label for="rad-road">Roads</label>
-			<input type="radio" id="rad-pavement" name="tool" value="pavement"><label for="rad-pavement">Pavements</label>
-			<input type="radio" id="rad-building" name="tool" value="building"><label for="rad-building">Buildings</label>
+			<label for="rad-pointer" title="Pointer">&#128070;</label>
+			<input type="radio" id="rad-pointer" name="tool" value="pointer" checked="checked">
+			<label for="rad-source" title="Place sources">&#9873;</label>
+			<input type="radio" id="rad-source" name="tool" value="source">
+			<label for="rad-target" title="Place targets">&#127937;</label>
+			<input type="radio" id="rad-target" name="tool" value="target">
+			<label for="rad-road" title="Place roads">&#128664;</label>
+			<input type="radio" id="rad-road" name="tool" value="road">
+			<label for="rad-pavement" title="Place pavements">&#128694;</label>
+			<input type="radio" id="rad-pavement" name="tool" value="pavement">
+			<label for="rad-building" title="Place buildings">&#127970;</label>
+			<input type="radio" id="rad-building" name="tool" value="building">
 		</div>
 	</section>
 	<footer>
 		<small>By Ferry Timmers and Maurice Houben, March 2016</small>
 	</footer>
+	<div id="loader"><h1>Loading...</h1></div>
 	<script>
 		var domain = [0, 0, 600, 600],
 			resolution = [100, 100],
@@ -95,17 +133,20 @@
 				ant_count:       25,
 			},
 			aco = new ACO(grid, settings, Heuristic.cosine_distance),
-			field = new Field('field', aco, domain, resolution);
+			heatmap = new Heatmap('heatmap', aco),
+			editor = new Editor('editor', aco);
+
 		aco
-			.addSource(grid.lookup(0, 0), 100)
-			.addTarget(grid.lookup(Infinity, Infinity), 100)
+			.addSource(grid.lookup(-Infinity, -Infinity), 50)
+			.addTarget(grid.lookup(Infinity, Infinity), 50)
 		;
+		editor.update();
 		window.requestAnimationFrame(function render()
 		{
-			field.draw();
+			if (aco.active)
+				heatmap.redraw();
 			window.requestAnimationFrame(render);
 		});
-
 	</script>
 </body>
 </html>
