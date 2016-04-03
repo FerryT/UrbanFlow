@@ -73,13 +73,15 @@ $('#btn-create').click(function ()
 	$('#rad-start').prop('checked', false);
 	$('#rad-stop').prop('checked', true);
 	$('#btns-state').buttonset('refresh');
-	domain = [0, 0, $('#spn-width').val(), $('#spn-height').val()],
-	resolution = [$('#spn-xres').val(), $('#spn-yres').val()],
-	grid = Rasterize(function (){}, domain, resolution);
+	domain = [0, 0, $('#spn-width').val(), $('#spn-height').val()];
+	resolution = [$('#spn-xres').val(), $('#spn-yres').val()];
+	plan = new Plan('plan', domain);
+	grid = Rasterize(plan.getRaster(), domain, resolution);
 	aco.changeGrid(grid);
 	aco.addSource(grid.lookup(-Infinity, -Infinity), 50);
 	aco.addTarget(grid.lookup(Infinity, Infinity), 50);
-	heatmap.resize();
+	plan.resize();
+	visuals.resize();
 	editor.resize();
 });
 
@@ -151,7 +153,7 @@ $('#btn-reset')
 	.click(function ()
 	{
 		aco.reset();
-		heatmap.redraw();
+		visuals.redraw();
 		editor.update();
 	})
 	.button()
@@ -216,6 +218,7 @@ function updateTargets()
 				function ()
 				{
 					aco.removeTarget(i);
+					editor.update();
 					updateTargets();
 				});
 		})(i);
@@ -224,6 +227,29 @@ function updateTargets()
 updateSources();
 updateTargets();
 
+editor.onchange = function ()
+{
+	updateSources();
+	updateTargets();
+};
+
+//------------------------------------------------------------------------------
+// Visualization
+
+$('#btns-vis').buttonset();
+$('#btns-vis label').addClass('ui-corner-left').addClass('ui-corner-right');
+$('#btns-vis input').change(function ()
+{
+	if (this.value == 'heatmap')
+	{
+		visuals = new Heatmap('visuals', aco);
+		visuals.opacity = .4;
+	}
+	else if (this.value == 'flowmap')
+		visuals = new Flowmap('visuals', aco);
+	else if (this.value == 'hybrid')
+		visuals = new Hybrid('visuals', aco);
+});
 
 //------------------------------------------------------------------------------
 // Toolbar

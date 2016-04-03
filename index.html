@@ -13,10 +13,13 @@
 	<script src="resources/rasterizer.js"></script>
 	<script src="resources/heuristics.js"></script>
 	<script src="resources/aco.js"></script>
+	<script src="resources/plan.js"></script>
 
 	<script src="resources/interface.js"></script>
 	<link rel="stylesheet" href="resources/interface.css">
 	<script src="resources/heatmap.js"></script>
+	<script src="resources/flowmap.js"></script>
+	<script src="resources/hybrid.js"></script>
 	<script src="resources/editor.js"></script>
 	<link rel="stylesheet" href="resources/visuals.css">
 </head>
@@ -86,15 +89,28 @@
 				</div>
 				<button id="btn-reset">Reset</button>
 			</div>
-		<h3>Sources</h3>
-		<div id="pan-sources"></div>
-		<h3>Targets</h3>
-		<div id="pan-targets"></div>
+			<h3>Sources</h3>
+			<div id="pan-sources"></div>
+			<h3>Targets</h3>
+			<div id="pan-targets"></div>
+			<h3>Visualization</h3>
+			<div>
+				<h4>Mode:</h4>
+				<div id="btns-vis" class="ui-widget-header ui-corner-all">
+					<label for="rad-heatmap">Heatmap</label>
+					<input type="radio" id="rad-heatmap" name="vismode" value="heatmap" checked="checked"><br>
+					<label for="rad-flowmap">Flowmap</label>
+					<input type="radio" id="rad-flowmap" name="vismode" value="flowmap"><br>
+					<label for="rad-hybrid">Hybrid</label>
+					<input type="radio" id="rad-hybrid" name="vismode" value="hybrid">
+				</div>
+			</div>
 		</div>
 	</section>
 	<section id="content">
 		<div id="document">
-			<canvas id="heatmap"></canvas>
+			<canvas id="plan"></canvas>
+			<canvas id="visuals"></canvas>
 			<svg id="editor"></svg>
 		</div>
 	</section>
@@ -121,7 +137,8 @@
 	<script>
 		var domain = [0, 0, 600, 600],
 			resolution = [100, 100],
-			grid = Rasterize(function (){}, domain, resolution),
+			plan = new Plan('plan', domain),
+			grid = Rasterize(plan.getRaster(), domain, resolution),
 			settings = {
 				trail_default:   Number.MIN_VALUE,
 				trail_minimum:   1e-1,
@@ -132,19 +149,20 @@
 				iteration_limit: 100000,
 				ant_count:       25,
 			},
-			aco = new ACO(grid, settings, Heuristic.cosine_distance),
-			heatmap = new Heatmap('heatmap', aco),
-			editor = new Editor('editor', aco);
-
+			aco = new ACO(grid, settings, Heuristic.mix),
+			visuals = new Heatmap('visuals', aco),
+			editor = new Editor('editor', aco, plan);
 		aco
 			.addSource(grid.lookup(-Infinity, -Infinity), 50)
 			.addTarget(grid.lookup(Infinity, Infinity), 50)
 		;
+		visuals.opacity = .4;
 		editor.update();
+		visuals.redraw();
 		window.requestAnimationFrame(function render()
 		{
 			if (aco.active)
-				heatmap.redraw();
+				visuals.redraw();
 			window.requestAnimationFrame(render);
 		});
 	</script>

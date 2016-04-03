@@ -69,12 +69,35 @@ function cosine_distance(edges, target)
 	}, edges, true);
 }
 
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+function map_intrinsic(edges, target)
+{
+	return Heuristic(function (edge)
+	{
+		return edge.v.value;
+	}, edges, false);
+}
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+function mix(edges, target)
+{
+	var map = map_intrinsic(edges, target);
+	return cosine_distance(edges, target).map(function (edge, i)
+	{
+		return edge * map[i];
+	});
+}
+
 //------------------------------------------------------------------------------
 
 global.Heuristic = Heuristic;
 global.Heuristic.none = none;
 global.Heuristic.simple_distance = simple_distance;
 global.Heuristic.cosine_distance = cosine_distance;
+global.Heuristic.map_intrinsic = map_intrinsic;
+global.Heuristic.mix = mix;
 
 })(window || this);
 

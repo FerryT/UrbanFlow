@@ -6,33 +6,53 @@
 
 //------------------------------------------------------------------------------
 
-function Editor(id, aco)
+function Editor(id, aco, plan)
 {
 	this.svg = d3.select('#' + id);
 	this.sources = this.svg.append('g').attr('id', 'sources');
 	this.targets = this.svg.append('g').attr('id', 'targets');
 	this.aco = aco;
+	this.plan = plan;
 	this.mode = 'pointer';
-
-	this.resize();
+	this.onchange = null;
+	this.changecounter = null;
 
 	var editor = this;
 	this.svg.on('click', function ()
 	{
-		var x = d3.mouse(this)[0],
-			y = d3.mouse(this)[1];
-
-		if (editor.mode == 'source')
-		{
-			aco.addSource(editor.aco.grid.lookup(x, y), 50);
-			updateSources(editor);
-		}
-		else if (editor.mode == 'target')
-		{
-			aco.addTarget(editor.aco.grid.lookup(x, y), 50);
-			updateTargets(editor);
-		}
+		var coords = d3.mouse(this),
+			d = d3.select(d3.event.target).datum();
+		if (!d3.event.defaultPrevented)
+			event.call(this, editor, 'click', d, coords[0], coords[1]);
 	});
+	this.drag = d3.behavior.drag()
+		.on('drag', function (d)
+			{ event.call(this, editor, 'drag', d, d3.event.x, d3.event.y); })
+		.on('dragstart', function (d)
+		{
+			var coords = d3.mouse(this);
+			event.call(this, editor, 'dragstart', d, coords[0], coords[1]);
+		})
+		.on('dragend', function (d)
+		{
+			var coords = d3.mouse(this);
+			event.call(this, editor, 'dragend', d, coords[0], coords[1]);
+		})
+	;
+	this.svg
+		.on('mousedown', function (d)
+		{
+			var coords = d3.mouse(this);
+			event.call(this, editor, 'dragstart', d, coords[0], coords[1]);
+		})
+		.on('mouseup', function (d)
+		{
+			var coords = d3.mouse(this);
+			event.call(this, editor, 'dragend', d, coords[0], coords[1]);
+		})
+	;
+
+	this.resize();
 }
 
 Editor.prototype.resize = function resize()
@@ -53,42 +73,98 @@ Editor.prototype.resize = function resize()
 			].join(' '))
 	;
 	this.update();
+	return this;
 }
 
 Editor.prototype.update = function update()
 {
 	updateSources(this);
 	updateTargets(this);
+	return this;
 }
 
 Editor.prototype.changeMode = function changeMode(mode)
 {
 	this.mode = mode;
+	var spot = (editor.mode == 'target' || editor.mode == 'source');
+	this.sources.selectAll('circle')
+		.style('cursor', spot ? 'pointer' : 'default')
+	;
+	this.targets.selectAll('circle')
+		.style('cursor', spot ? 'pointer' : 'default')
+	;
+	return this;
+}
+
+function event(editor, type, d, x, y)
+{
+	if (type == 'click' && editor.mode == 'source')
+	{
+		aco.addSource(editor.aco.grid.lookup(x, y), 50);
+		updateSources(editor);
+		if (editor.onchange) editor.onchange();
+	}
+	else if (type == 'click' && editor.mode == 'target')
+	{
+		aco.addTarget(editor.aco.grid.lookup(x, y), 50);
+		updateTargets(editor);
+		if (editor.onchange) editor.onchange();
+	}
+	else if ((editor.mode == 'target' || editor.mode == 'source') && (d && ('weight' in d)))
+	{
+		if (type == 'drag')
+			d3.select(this).attr('cx', x).attr('cy', y);
+		else if (type == 'dragend' && d instanceof ACO.Source)
+		{
+			editor.aco.updateSource(d.index, editor.aco.grid.lookup(x, y));
+			updateSources(editor);
+		}
+		else if (type == 'dragend' && d instanceof ACO.Target)
+		{
+			editor.aco.updateTarget(d.index, editor.aco.grid.lookup(x, y));
+			updateTargets(editor);
+		}
+	}
+	else if (type == 'dragend' && editor.mode == 'road')
+	{
+		editor.plan.drawRoad(editor.ox, editor.oy, x, y);
+		wait_change(editor);
+	}
+	else if (type == 'dragend' && editor.mode == 'pavement')
+	{
+		editor.plan.drawPavement(editor.ox, editor.oy, x, y);
+		wait_change(editor);
+	}
+	else if (type == 'dragend' && editor.mode == 'building')
+	{
+		editor.plan.drawBuilding(editor.ox, editor.oy, x, y);
+		wait_change(editor);
+	}
+	if (type == 'dragstart')
+	{
+		editor.ox = x;
+		editor.oy = y;
+	}
+}
+
+function wait_change(editor)
+{
+	if (editor.changecounter)
+		clearTimeout(editor.changecounter);
+	editor.changecounter = setTimeout(function ()
+	{
+		aco.grid.rasterize();
+		aco.changeHeuristic();
+		editor.changecounter = null;
+	}, 5000);
 }
 
 //------------------------------------------------------------------------------
 
 function updateSources(editor)
 {
-	var sources = editor.sources.selectAll('circle').data(editor.aco.sources),
-		drag = d3.behavior.drag()
-			.on('drag', function (d)
-			{
-				var coords = d3.mouse(this);
-				d3.select(this)
-					.attr('cx', coords[0])
-					.attr('cy', coords[1])
-				;
-			})
-			.on('dragend', function (d)
-			{
-				var coords = d3.mouse(this);
-				editor.aco.updateSource(d.index,
-					editor.aco.grid.lookup(coords[0], coords[1]));
-				updateSources(editor);
-			})
-		;
-	sources.enter().append('circle').call(drag);
+	var sources = editor.sources.selectAll('circle').data(editor.aco.sources);
+	sources.enter().append('circle').call(editor.drag);
 	sources
 		.attr('cx', function (d) { return d.cell.x; })
 		.attr('cy', function (d) { return d.cell.y; })
@@ -100,25 +176,8 @@ function updateSources(editor)
 
 function updateTargets(editor)
 {
-	var targets = editor.targets.selectAll('circle').data(editor.aco.targets),
-		drag = d3.behavior.drag()
-			.on('drag', function (d)
-			{
-				var coords = d3.mouse(this);
-				d3.select(this)
-					.attr('cx', coords[0])
-					.attr('cy', coords[1])
-				;
-			})
-			.on('dragend', function (d)
-			{
-				var coords = d3.mouse(this);
-				editor.aco.updateTarget(d.index,
-					editor.aco.grid.lookup(coords[0], coords[1]));
-				updateTargets(editor);
-			})
-		;
-	targets.enter().append('circle').call(drag);
+	var targets = editor.targets.selectAll('circle').data(editor.aco.targets);
+	targets.enter().append('circle').call(editor.drag);
 	targets
 		.attr('cx', function (d) { return d.cell.x; })
 		.attr('cy', function (d) { return d.cell.y; })

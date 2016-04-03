@@ -176,3 +176,15 @@ section {
 #pan-sources .ui-slider, #pan-targets .ui-slider {
 	margin-top: .25em;
 }
+
+#btns-vis {
+	text-align: center;
+}
+#btns-vis label {
+	margin: .25em;
+	width: 90%;
+	text-align: center;
+}
+#btns-vis span {
+	padding: .5em 0;
+}

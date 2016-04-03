@@ -13,7 +13,6 @@
 #sources circle, #targets circle {
 	stroke: black;
 	stroke-width: 2px;
-	cursor: pointer;
 }
 #sources circle {
 	fill: deepskyblue;
