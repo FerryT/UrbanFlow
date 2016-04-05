@@ -17,7 +17,8 @@ function Hybrid(id, aco)
 	this.color = d3.scale.linear()
 		.domain([1, .75, .5, .25, 0])
 		//.range(['#a63603', '#e6550d', '#fd8d3c', '#fdbe85', '#feedde'])
-		.range(['#8c510a', '#bf812d', '#80cdc1', '#35978f', '#01665e'])
+		//.range(['#8c510a', '#bf812d', '#80cdc1', '#35978f', '#01665e'])
+		.range(['#993404', '#d95f0e', '#fe9929', '#fed98e', '#ffffd4'])
 	;
 
 	this.resize();
@@ -91,7 +92,7 @@ Hybrid.prototype.redraw = function redraw()
 
 		var w = Math.max(Math.min(w, 1), 0);
 		this.context.strokeStyle = this.color(w);
-		this.context.globalAlpha = Math.min(this.opacity, w);
+		this.context.globalAlpha = Math.min(this.opacity, w * w);
 		this.context.lineWidth = 2.5 + 1 / w;
 		p.frame();
 		this.context.lineTo(p.x, p.y);
@@ -113,9 +114,12 @@ Hybrid.prototype.redraw = function redraw()
 
 	if (this.particles.length < 2000)
 	{
-		var particle = new Particle();
-		particle.setRandom();
-		this.particles.push(particle);
+		for (var i = 10; i >= 0; --i)
+		{
+			var particle = new Particle();
+			particle.setRandom();
+			this.particles.push(particle);
+		}
 	}
 	return this;
 }

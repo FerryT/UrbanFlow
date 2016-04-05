@@ -12,7 +12,7 @@ function Heatmap(id, aco)
 	this.context = this.canvas.node().getContext('2d');
 	this.aco = aco;
 
-	this.opacity = 1;
+	this.opacity = .9;
 	this.color = d3.scale.linear()
 		.domain([1, .75, .5, .25, 0])
 		.range(['#a6611a', '#dfc27d', '#f5f5f5', '#80cdc1', '#018571'])
@@ -43,18 +43,21 @@ Heatmap.prototype.redraw = function redraw()
 		ch = this.cellheight,
 		hcw = cw / 2,
 		hch = ch / 2;
-	this.context.globalAlpha = this.opacity;
+	this.context.globalCompositeOperation = 'source-over';
 	this.context.clearRect(0, 0, this.width, this.height);
 	this.aco.grid.eachCell(function (cell)
 	{
 		var value = Math.max.apply(null, cell.edges.map(function (edge)
 			{
+				if (!heatmap.aco.targets.length) return 0;
 				return heatmap.aco.globalTrails[edge.index];
 			})),
 			x = cell.x - hcw, y = cell.y - hch,
 			sx = x << 0, sy = y << 0,
 			ox = x - sx, oy = y - sy;
-		heatmap.context.fillStyle = heatmap.color(Math.min(value, 1));
+		value = Math.min(value, 1);
+		heatmap.context.fillStyle = heatmap.color(value);
+		heatmap.context.globalAlpha = heatmap.opacity * value;
 		heatmap.context.beginPath();
 		heatmap.context.rect(sx, sy, (cw + ox) << 0, (ch + oy) << 0);
 		heatmap.context.fill();
