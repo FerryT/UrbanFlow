@@ -301,7 +301,7 @@ ACO.prototype.go = function go()
 	}
 
 	// Set up budget canary: prevents the queue from flooding
-	this.budget = Math.ceil(this.settings.ant_count / this.colony.size);
+	this.budget = Math.floor(this.settings.ant_count / this.colony.size);
 	function syncBudget() { sync(aco, 'budget', aco.budget, true); }
 	this.canary = setInterval(syncBudget, 100);
 	syncBudget();
