@@ -10,7 +10,7 @@
 #editor {
 	cursor: default;
 }
-#sources circle, #targets circle {
+#editor circle {
 	stroke: black;
 	stroke-width: 2px;
 }
@@ -19,4 +19,40 @@
 }
 #targets circle {
 	fill: springgreen;
+}
+#cursor {
+	display: none;
+	stroke: white !important;
+	fill: black;
+	cursor: none;
+	pointer-events: none;
+}
+#cursor.snap-node {
+	fill: yellow !important;
+}
+#cursor.snap-edge {
+	fill: aqua !important;
+}
+#cursor.snap-dedge {
+	fill: red !important;
+}
+
+#roads {
+	stroke: #202020;
+	stroke-linecap: round;
+}
+#roadlines {
+	stroke: #cccccc;
+}
+#pavements {
+	stroke: #555555;
+	stroke-linecap: round;
+}
+#buildings {
+	stroke: #202020;
+	stroke-width: 2px;
+}
+#buildinglines {
+	stroke: magenta;
+	stroke-width: 2px;
 }

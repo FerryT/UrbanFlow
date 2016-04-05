@@ -153,6 +153,9 @@ section {
 	width: 2.5em;
 	text-align: right;
 }
+select {
+	width: 100%;
+}
 
 #algstate p {
 	margin: 1em 0 .5em 0;

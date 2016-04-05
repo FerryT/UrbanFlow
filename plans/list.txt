@@ -1,0 +1,4 @@
+Planlist({
+	'plan001.ufp': 'Some city 1',
+	//'filename.ufp': 'Plan name',
+});

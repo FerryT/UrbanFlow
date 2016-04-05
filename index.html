@@ -8,7 +8,9 @@
 	<link rel="stylesheet" href="resources/ui/jquery-ui.min.css">
 	<link rel="stylesheet" href="resources/ui/jquery-ui.structure.min.css">
 	<link rel="stylesheet" href="resources/ui/jquery-ui.theme.min.css">
+	<script src="resources/FileSaver.min.js"></script>
 	<script src="resources/wewo.js"></script>
+	<script src="resources/dcel.js"></script>
 
 	<script src="resources/rasterizer.js"></script>
 	<script src="resources/heuristics.js"></script>
@@ -47,15 +49,22 @@
 				<h4>Document settings:</h4>
 				<p>
 					<label>Size: </label><br>
-					<input type="text" id="spn-width" class="coord"> X <input type="text" id="spn-height" class="coord">
+					<input type="text" id="spn-width" class="coord"> X <input type="text" id="spn-height" class="coord"> m
 				</p>
 				<p>
 					<label>Resolution: </label><br>
 					<input type="text" id="spn-xres" class="coord"> X <input type="text" id="spn-yres" class="coord">
 				</p>
 				<p>
-					<button id="btn-create">Create</button><br>
-					<small>Note: changes will be lost.</small>
+					<button id="btn-create">Create new</button>
+				</p>
+				<p>
+					<label for="sel-plans">Plan files:</label><br>
+					<select id="sel-plans"><option>&hellip;</option></select><br>
+					<button id="btn-load">Load</button>
+				</p>
+				<p>
+					<button id="btn-save">Save</button>
 				</p>
 			</div>
 			<h3>Algorithm</h3>
@@ -109,7 +118,7 @@
 	</section>
 	<section id="content">
 		<div id="document">
-			<canvas id="plan"></canvas>
+			<svg id="plan"></svg>
 			<canvas id="visuals"></canvas>
 			<svg id="editor"></svg>
 		</div>
@@ -128,10 +137,12 @@
 			<input type="radio" id="rad-pavement" name="tool" value="pavement">
 			<label for="rad-building" title="Place buildings">&#127970;</label>
 			<input type="radio" id="rad-building" name="tool" value="building">
+			<label for="rad-demolish" title="Remove structures">&#128163;</label>
+			<input type="radio" id="rad-demolish" name="tool" value="demolish">
 		</div>
 	</section>
 	<footer>
-		<small>By Ferry Timmers and Maurice Houben, March 2016</small>
+		<small>By Ferry Timmers and Maurice Houben, April 2016</small>
 	</footer>
 	<div id="loader"><h1>Loading...</h1></div>
 	<script>
@@ -156,7 +167,6 @@
 			.addSource(grid.lookup(-Infinity, -Infinity), 50)
 			.addTarget(grid.lookup(Infinity, Infinity), 50)
 		;
-		visuals.opacity = .4;
 		editor.update();
 		visuals.redraw();
 		window.requestAnimationFrame(function render()

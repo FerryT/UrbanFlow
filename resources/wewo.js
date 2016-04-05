@@ -1,5 +1,6 @@
 /**
  * WebWorker abstraction layer
+ * Ferry Timmers, April 2016, as MIT
  */
 
 (function (global) {

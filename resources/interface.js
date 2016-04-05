@@ -56,8 +56,8 @@ $('#spn-width,#spn-height').spinner({
 	step: 10,
 	page: 10,
 });
-$('#spn-width').val(domain[2]);
-$('#spn-height').val(domain[3]);
+$('#spn-width').val(domain[2] * plan.scale);
+$('#spn-height').val(domain[3] * plan.scale);
 
 $('#spn-xres,#spn-yres').spinner({
 	min: 10,
@@ -67,24 +67,95 @@ $('#spn-xres,#spn-yres').spinner({
 $('#spn-xres').val(resolution[0]);
 $('#spn-yres').val(resolution[1]);
 
-$('#btn-create').button();
 $('#btn-create').click(function ()
+{
+	create($('#spn-width').val() / plan.scale,
+		$('#spn-height').val() / plan.scale,
+		[$('#spn-xres').val(), $('#spn-yres').val()], 5);
+
+	aco.addSource(grid.lookup(-Infinity, -Infinity), 50);
+	aco.addTarget(grid.lookup(Infinity, Infinity), 50);
+	editor.update();
+}).button();
+
+$('#btn-load').click(function ()
+{
+	var file = $('#sel-plans').val();
+	if (!file) return;
+	$.ajax({
+		url: 'plans/' + file,
+		dataType: 'jsonp',
+		crossDomain: true,
+		jsonpCallback: 'UrbanFlowPlan',
+		success: function (data)
+		{
+			create(
+				data.domain[2], data.domain[3],
+				data.resolution, data.scale);
+			data.sources.forEach(function (d)
+			{
+				aco.addSource(grid.lookup(d.cell[0], d.cell[1]), d.weight);
+			});
+			data.targets.forEach(function (d)
+			{
+				aco.addTarget(grid.lookup(d.cell[0], d.cell[1]), d.weight);
+			});
+			plan.unserialize(data);
+			editor.update();
+			aco.grid.rasterize();
+			aco.changeHeuristic();
+		},
+	});
+}).button();
+$('#sel-plans').selectmenu();
+$.ajax({
+	url: 'plans/list.txt',
+	dataType: 'jsonp',
+	crossDomain: true,
+	jsonpCallback: 'Planlist',
+	success: function (data)
+	{
+		for (var file in data)
+			$('#sel-plans').append($('<option>')
+				.attr('value', file)
+				.text(data[file]));
+		$('#sel-plans').selectmenu('refresh');
+	},
+});
+$('#btn-save').click(function ()
+{
+	function spot(d) { return { cell: [d.cell.x, d.cell.y], weight: d.weight }; }
+	var data = plan.serialize();
+	data.resolution = resolution;
+	data.sources = aco.sources.map(spot);
+	data.targets = aco.targets.map(spot);
+	data = 'UrbanFlowPlan(' + JSON.stringify(data) + ')';
+	var blob = new Blob([data], {
+			type: 'application/javascript',
+		});
+	saveAs(blob, 'unnamed.ufp');
+}).button();
+
+function create(width, height, res, scale)
 {
 	$('#rad-start').prop('checked', false);
 	$('#rad-stop').prop('checked', true);
 	$('#btns-state').buttonset('refresh');
-	domain = [0, 0, $('#spn-width').val(), $('#spn-height').val()];
-	resolution = [$('#spn-xres').val(), $('#spn-yres').val()];
+
+	domain = [0, 0, width, height];
+	resolution = res;
 	plan = new Plan('plan', domain);
 	grid = Rasterize(plan.getRaster(), domain, resolution);
+	editor = new Editor('editor', aco, plan);
+
 	aco.changeGrid(grid);
-	aco.addSource(grid.lookup(-Infinity, -Infinity), 50);
-	aco.addTarget(grid.lookup(Infinity, Infinity), 50);
 	plan.resize();
 	visuals.resize();
 	editor.resize();
-});
 
+	$('#btns-tools input').prop('checked', false);
+	$('#rad-pointer').prop('checked', true).trigger('change');
+}
 
 //------------------------------------------------------------------------------
 // Algorithm
@@ -241,10 +312,7 @@ $('#btns-vis label').addClass('ui-corner-left').addClass('ui-corner-right');
 $('#btns-vis input').change(function ()
 {
 	if (this.value == 'heatmap')
-	{
 		visuals = new Heatmap('visuals', aco);
-		visuals.opacity = .4;
-	}
 	else if (this.value == 'flowmap')
 		visuals = new Flowmap('visuals', aco);
 	else if (this.value == 'hybrid')
