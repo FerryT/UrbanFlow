@@ -341,8 +341,7 @@ ACO.prototype.progress = function progress()
 			for (var k = edges.length - 1; k >= 0; --k)
 				target.trails[edges[k]] = Math.min(
 					target.trails[edges[k]] + s.trail_reward
-					/* * (edges.length / self.best.length 1000)*/,
-						// Todo: add reward as function of length
+						* (edges.length / s.iteration_limit),
 					1);
 		}
 

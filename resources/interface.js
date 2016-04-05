@@ -18,7 +18,11 @@ $('#btns-state').buttonset();
 $('#btns-state input').change(function ()
 {
 	if (this.value == 'start')
+	{
+		aco.grid.rasterize();
+		aco.changeHeuristic();
 		aco.go();
+	}
 	else if (this.value == 'stop')
 		aco.halt();
 });
@@ -56,8 +60,8 @@ $('#spn-width,#spn-height').spinner({
 	step: 10,
 	page: 10,
 });
-$('#spn-width').val(domain[2] * plan.scale);
-$('#spn-height').val(domain[3] * plan.scale);
+$('#spn-width').val(domain[2] / plan.scale);
+$('#spn-height').val(domain[3] / plan.scale);
 
 $('#spn-xres,#spn-yres').spinner({
 	min: 10,
@@ -69,9 +73,10 @@ $('#spn-yres').val(resolution[1]);
 
 $('#btn-create').click(function ()
 {
-	create($('#spn-width').val() / plan.scale,
-		$('#spn-height').val() / plan.scale,
-		[$('#spn-xres').val(), $('#spn-yres').val()], 5);
+	var scale = 5;
+	create($('#spn-width').val() * scale,
+		$('#spn-height').val() * scale,
+		[+$('#spn-xres').val(), +$('#spn-yres').val()], scale);
 
 	aco.addSource(grid.lookup(-Infinity, -Infinity), 50);
 	aco.addTarget(grid.lookup(Infinity, Infinity), 50);
@@ -149,6 +154,7 @@ function create(width, height, res, scale)
 	editor = new Editor('editor', aco, plan);
 
 	aco.changeGrid(grid);
+	aco.changeSettings({ iteration_limit: (res[0] + res[1]) * 10 });
 	plan.resize();
 	visuals.resize();
 	editor.resize();

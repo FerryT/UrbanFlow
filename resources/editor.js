@@ -158,6 +158,7 @@ function event(editor, type, d, x, y)
 			plan.pavements.removeEdge(editor.snap[1]);
 			plan.buildings.removeEdge(editor.snap[1]);
 			plan.clean().update();
+			wait_change(editor);
 		}
 	}
 
@@ -255,6 +256,7 @@ function draw(editor, dcel, func)
 
 function wait_change(editor)
 {
+	if (!aco.active) return;
 	if (editor.changecounter)
 		clearTimeout(editor.changecounter);
 	editor.changecounter = setTimeout(function ()

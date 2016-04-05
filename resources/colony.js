@@ -16,7 +16,7 @@ var timestamp = 0,
 	trails = [], // [forall grid.edges] x targets
 	heuristics = [], // [forall grid.cells] x targets
 	ants = [],
-	antcount = 100,
+	antcount = 10,
 	speed = 1000 / 60,
 	interval = undefined,
 	burst = 1000,
@@ -173,7 +173,7 @@ Ant.prototype.step = function step()
 Ant.prototype.wander = function wander()
 {
 	this.cell = (grid.cells.length * Math.random()) << 0;
-	this.path = [];
+	this.path.length >>= 1;
 	return false;
 }
 
