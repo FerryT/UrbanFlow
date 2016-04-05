@@ -157,7 +157,7 @@
 				trail_decay:     0.5,
 				trail_reward:    0.5,
 				heuristic_power: 0.5,
-				iteration_limit: 1000,
+				iteration_limit: (resolution[0] + resolution[1]) * 10,
 				ant_count:       25,
 			},
 			aco = new ACO(grid, settings, Heuristic.mix),

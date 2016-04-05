@@ -6,11 +6,11 @@
 
 //------------------------------------------------------------------------------
 
-function Heuristic(func, edges, normalize)
+function Heuristic(func, edges, target, normalize)
 {
 	var heuristic = edges.map(function (edge)
 	{
-		return func(edge);
+		return func(edge, target);
 	});
 
 	if (normalize)
@@ -35,59 +35,96 @@ function Heuristic(func, edges, normalize)
 
 function none(edges, target)
 {
-	return Heuristic(function (edge) { return 1; }, edges);
+	return 1;
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 function simple_distance(edges, target)
 {
-	return Heuristic(function (edge)
-	{
-		var x = (edge.u.x + edge.v.x) / 2,
-			y = (edge.u.y + edge.v.y) / 2,
-			vx = target.x - x,
-			vy = target.y - y;
-		return -Math.sqrt(vx * vx + vy * vy);
-	}, edges, true);
+	var x = (edge.u.x + edge.v.x) / 2,
+		y = (edge.u.y + edge.v.y) / 2,
+		vx = target.x - x,
+		vy = target.y - y;
+	return -Math.sqrt(vx * vx + vy * vy);
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-function cosine_distance(edges, target)
+function cosine_distance(edge, target)
 {
-	return Heuristic(function (edge)
-	{
-		var v1x = target.x - edge.u.x,
-			v1y = target.y - edge.u.y,
-			v2x = edge.v.x - edge.u.x,
-			v2y = edge.v.y - edge.u.y;
-		if (v1x == 0 && v1y == 0)
-			return 1;
-		return (v1x*v2x + v1y*v2y) /
-			(Math.sqrt(v1x*v1x + v1y*v1y) * Math.sqrt(v2x*v2x + v2y*v2y));
-	}, edges, true);
+	var u = vect(edge.u, edge.v),
+		v = vect(edge.u, target),
+		n = norm(u) * norm(v),
+		d = dot(u, v) / n;
+	return Math.max((d + 1) / 2, Number.MIN_VALUE);
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-function map_intrinsic(edges, target)
+function obstruction_avoidance(edge, target)
 {
-	return Heuristic(function (edge)
-	{
-		return edge.v.value;
-	}, edges, false);
+	var closest = plan.buildings.closestEdge(edge.u.x, edge.u.y);
+	if (!closest[0])
+		return 1;
+	var	u = vect(edge.u, edge.v),
+		v = vect(closest[0].node, closest[0].twin.node),
+		n = norm(u) * norm(v),
+		d = Math.abs(dot(u, v) / n),
+		c = Math.max(1 - (closest[2] / obstruction_avoidance.threshold), 0);
+	return Math.max(c * d + (1 - c), Number.MIN_VALUE);
+}
+
+obstruction_avoidance.threshold = 40;
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+function map_intrinsic(edge, target)
+{
+	return edge.v.value;
 }
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-function mix(edges, target)
+function mix(edge, target)
 {
-	var map = map_intrinsic(edges, target);
-	return cosine_distance(edges, target).map(function (edge, i)
-	{
-		return edge * map[i];
-	});
+	var cos = cosine_distance(edge, target),
+		obs = obstruction_avoidance(edge, target),
+		map = map_intrinsic(edge, target)
+	return cos * obs * map;
+}
+
+//------------------------------------------------------------------------------
+
+function vect(p1, p2)
+{
+	return { x: p2.x - p1.x, y: p2.y - p1.y };
+}
+
+function dot(v1, v2)
+{
+	return v1.x * v2.x + v1.y * v2.y;
+}
+
+function cross(v1, v2)
+{
+	return v1.x * v2.y - v1.y * v2.x;
+}
+
+function norm(v)
+{
+	return Math.sqrt(v.x * v.x + v.y * v.y);
+}
+
+function normal(v)
+{
+	var n = norm(v);
+	return { x: y / n, y: -x / n };
+}
+
+function dist(p1, p2)
+{
+	return norm(vect(p1, p2));
 }
 
 //------------------------------------------------------------------------------
@@ -97,6 +134,7 @@ global.Heuristic.none = none;
 global.Heuristic.simple_distance = simple_distance;
 global.Heuristic.cosine_distance = cosine_distance;
 global.Heuristic.map_intrinsic = map_intrinsic;
+global.Heuristic.obstruction_avoidance = obstruction_avoidance;
 global.Heuristic.mix = mix;
 
 })(window || this);

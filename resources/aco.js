@@ -108,7 +108,7 @@ function syncTrails(aco, amend)
 
 function updateHeuristic(aco, target)
 {
-	target.heuristic = aco.heuristic(aco.grid.edges, target.cell);
+	target.heuristic = Heuristic(aco.heuristic, aco.grid.edges, target.cell);
 }
 
 function resetTrails(aco, target)

@@ -72,9 +72,9 @@ Plan.prototype.getValue = function getValue(x, y)
 {
 	if (DCEL.insideFaces(this.buildingfaces, x, y))
 		return 0;
-	if (this.pavements.closestEdge(x,y) <= this.pavementWidth / 2)
-		return 1
-	if (this.roads.closestEdge(x,y) <= this.roadWidth / 2)
+	if (this.pavements.closestEdge(x, y)[2] <= this.pavementWidth / 2)
+		return 1;
+	if (this.roads.closestEdge(x, y)[2] <= this.roadWidth / 2)
 		return .5;
 	return .75;
 }
