@@ -1,5 +1,6 @@
 Planlist({
 	'plan001.ufp': 'Some city 1',
+	'plan003.ufp': 'Some city 2',
 	'plan002.ufp': 'Maze 1',
 	//'filename.ufp': 'Plan name',
 });
