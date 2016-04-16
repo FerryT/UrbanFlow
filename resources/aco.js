@@ -51,7 +51,10 @@ function ACO(grid, settings, heuristic)
 	this.globalTrails = [];
 	resetTrails(this, { trails: this.globalTrails });
 
-	var cores = Math.max((navigator.hardwareConcurrency || 4) - 1, 1);
+	var cores = navigator.hardwareConcurrency || 4;
+	if (cores > 4) // More cores is more overhead
+		cores /= 2;
+	cores = Math.max(cores - 1, 1);
 	this.colony = new WeWoBatch('resources/colony.js', cores);
 	this.budget = undefined;
 	this.canary = undefined;
