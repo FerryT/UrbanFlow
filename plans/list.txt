@@ -1,6 +1,8 @@
 Planlist({
 	'plan001.ufp': 'Some city 1',
 	'plan003.ufp': 'Some city 2',
+	'plan004.ufp': 'Some city 3',
+	'plan005.ufp': 'Vestdijk Eindhoven',
 	'plan002.ufp': 'Maze 1',
 	//'filename.ufp': 'Plan name',
 });
